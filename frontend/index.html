@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Collaborative Docs</title>
+    <style>
+        :root {
+            font-family: "Inter", Arial, sans-serif;
+            color: #1f2933;
+            background: #eef2f7;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #eef2f7;
+        }
+        header {
+            background: linear-gradient(120deg, #1d4ed8, #2563eb);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+        h1 { margin: 0; font-size: 2rem; }
+        h2 { margin-top: 0; }
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 12px 22px rgba(15,23,42,0.12);
+        }
+        form { display: grid; gap: 10px; }
+        label { font-size: 0.9rem; font-weight: 600; }
+        input, textarea {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5f5;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; }
+        button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:hover { background: #1d4ed8; }
+        .hidden { display: none; }
+        #status-banner {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 600;
+        }
+        #doc-details {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            background: #f8fafc;
+            min-height: 120px;
+        }
+        #doc-details h3 {
+            margin-top: 0;
+        }
+        #doc-details dl {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 8px 16px;
+        }
+        #doc-details dt {
+            font-weight: 600;
+        }
+        #doc-details pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        #activity-log {
+            background: #0f172a;
+            color: #d1d5db;
+            padding: 12px;
+            border-radius: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.9rem;
+        }
+        .activity-entry { margin-bottom: 8px; }
+        nav button {
+            background: transparent;
+            border: 1px solid #fff;
+            margin: 0 6px;
+        }
+        nav button.active {
+            background: #fff;
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Secure Collaborative Docs</h1>
+        <p>Experiment with the encrypted collaboration backend</p>
+        <nav>
+            <button id="auth-tab" class="active">Login / Register</button>
+            <button id="app-tab" disabled>Workspace</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="auth-view" class="card">
+            <div class="grid">
+                <div>
+                    <h2>Register</h2>
+                    <form id="register-form">
+                        <label>Username<input name="username" required></label>
+                        <label>Password<input name="password" type="password" required></label>
+                        <button type="submit">Create Account</button>
+                    </form>
+                </div>
+                <div>
+                    <h2>Login</h2>
+                    <form id="login-form">
+                        <label>Username<input name="username" required></label>
+                        <label>Password<input name="password" type="password" required></label>
+                        <button type="submit">Sign In</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="app-view" class="hidden">
+            <div id="status-banner">Authenticate to begin.</div>
+            <div class="grid">
+                <div class="card">
+                    <h2>Create Document</h2>
+                    <form id="create-form">
+                        <label>Title<input name="title" required></label>
+                        <label>Content<textarea name="content" rows="4" required></textarea></label>
+                        <label>Expiration (ISO timestamp)<input name="expiration" placeholder="Optional"></label>
+                        <button type="submit">Encrypt & Store</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>View Document</h2>
+                    <form id="view-form">
+                        <label>Document ID<input name="docId" type="number" min="1" required></label>
+                        <button type="submit">Decrypt & Verify</button>
+                    </form>
+                    <div id="doc-details">
+                        <h3>No document loaded</h3>
+                        <p>Use the form above to fetch a shared or owned document.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Edit Document</h2>
+                    <form id="edit-form">
+                        <label>Document ID<input name="docId" type="number" min="1" required></label>
+                        <label>Content<textarea name="content" rows="4" required></textarea></label>
+                        <button type="submit">Re-encrypt & Sign</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Share Document</h2>
+                    <form id="share-form">
+                        <label>Document ID<input name="docId" type="number" min="1" required></label>
+                        <label>Target Username<input name="target" required></label>
+                        <button type="submit">Share Key</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Audit Logs</h2>
+                    <form id="logs-form">
+                        <label>Document ID<input name="docId" type="number" min="1" required></label>
+                        <button type="submit">Fetch Signed Logs</button>
+                    </form>
+                    <pre id="log-output">No log data</pre>
+                </div>
+                <div class="card">
+                    <h2>Activity Feed</h2>
+                    <div id="activity-log"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let authToken = null;
+        let currentUser = null;
+
+        const authView = document.getElementById('auth-view');
+        const appView = document.getElementById('app-view');
+        const statusBanner = document.getElementById('status-banner');
+        const docDetails = document.getElementById('doc-details');
+        const logOutput = document.getElementById('log-output');
+        const activityLog = document.getElementById('activity-log');
+        const authTab = document.getElementById('auth-tab');
+        const appTab = document.getElementById('app-tab');
+
+        function switchToApp() {
+            authView.classList.add('hidden');
+            appView.classList.remove('hidden');
+            authTab.classList.remove('active');
+            authTab.disabled = false;
+            appTab.classList.add('active');
+            appTab.disabled = false;
+            statusBanner.textContent = `Authenticated as ${currentUser}`;
+            addActivity(`Logged in as ${currentUser}`);
+        }
+
+        function switchToAuth() {
+            authView.classList.remove('hidden');
+            appView.classList.add('hidden');
+            authTab.classList.add('active');
+            appTab.classList.remove('active');
+        }
+
+        authTab.addEventListener('click', () => {
+            switchToAuth();
+        });
+
+        appTab.addEventListener('click', () => {
+            if (!authToken) return;
+            switchToApp();
+        });
+
+        function addActivity(message) {
+            const entry = document.createElement('div');
+            entry.className = 'activity-entry';
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            activityLog.prepend(entry);
+        }
+
+        function renderDocument(data) {
+            docDetails.innerHTML = `
+                <h3>${data.title}</h3>
+                <dl>
+                    <dt>ID</dt><dd>${data.document_id}</dd>
+                    <dt>Owner</dt><dd>${data.owner_id}</dd>
+                    <dt>Signature valid</dt><dd>${data.signature_valid ? '✔️' : '❌'}</dd>
+                    <dt>Expiration</dt><dd>${data.expiration || 'None'}</dd>
+                </dl>
+                <h4>Content</h4>
+                <pre>${escapeHTML(data.content)}</pre>
+            `;
+        }
+
+        function escapeHTML(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        async function api(path, method = 'GET', payload = null, requireAuth = false) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (requireAuth) {
+                if (!authToken) throw new Error('Please login first.');
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            const res = await fetch(path, {
+                method,
+                headers,
+                body: payload ? JSON.stringify(payload) : null,
+            });
+            const body = await res.json().catch(() => ({ detail: 'Invalid JSON response' }));
+            if (!res.ok) {
+                throw new Error(body.detail || res.statusText);
+            }
+            return body;
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const form = evt.target;
+            try {
+                const result = await api('/register', 'POST', {
+                    username: form.username.value,
+                    password: form.password.value,
+                });
+                addActivity(`Registered ${form.username.value}`);
+                alert(`Registration successful. User ID ${result.user_id}`);
+                form.reset();
+            } catch (err) {
+                alert(`Registration failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const form = evt.target;
+            try {
+                const result = await api('/login', 'POST', {
+                    username: form.username.value,
+                    password: form.password.value,
+                });
+                authToken = result.token;
+                currentUser = form.username.value;
+                switchToApp();
+                form.reset();
+            } catch (err) {
+                alert(`Login failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('create-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const form = evt.target;
+            try {
+                const payload = {
+                    title: form.title.value,
+                    content: form.content.value,
+                    expiration_timestamp: form.expiration.value || null,
+                };
+                const result = await api('/documents/create', 'POST', payload, true);
+                addActivity(`Created document ${result.document_id}`);
+                alert(`Document created with ID ${result.document_id}`);
+                form.reset();
+            } catch (err) {
+                alert(`Create failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('view-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const id = evt.target.docId.value;
+            try {
+                const result = await api(`/documents/${id}/view`, 'GET', null, true);
+                renderDocument(result);
+                addActivity(`Viewed document ${id}`);
+            } catch (err) {
+                alert(`View failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('edit-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const form = evt.target;
+            try {
+                const payload = {
+                    content: form.content.value,
+                };
+                const result = await api(`/documents/${form.docId.value}/edit`, 'POST', payload, true);
+                addActivity(`Edited document ${result.document_id}`);
+                alert(`Document ${result.document_id} updated`);
+                form.reset();
+            } catch (err) {
+                alert(`Edit failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('share-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const form = evt.target;
+            try {
+                const payload = { target_username: form.target.value };
+                const result = await api(`/documents/${form.docId.value}/share`, 'POST', payload, true);
+                addActivity(`Shared document ${result.document_id} with ${result.shared_with}`);
+                alert(`Document shared with ${result.shared_with}`);
+                form.reset();
+            } catch (err) {
+                alert(`Share failed: ${err.message}`);
+            }
+        });
+
+        document.getElementById('logs-form').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            try {
+                const docId = evt.target.docId.value;
+                const result = await api(`/documents/${docId}/logs`, 'GET', null, true);
+                logOutput.textContent = JSON.stringify(result, null, 2);
+                addActivity(`Fetched logs for document ${docId}`);
+            } catch (err) {
+                alert(`Logs failed: ${err.message}`);
+            }
+        });
+    </script>
+</body>
+</html>
