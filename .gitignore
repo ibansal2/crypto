@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*.db
+pki/*.pem
+venv/
+.venv/
+.env
